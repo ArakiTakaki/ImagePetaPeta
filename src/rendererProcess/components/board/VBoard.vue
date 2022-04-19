@@ -37,7 +37,7 @@
       :progress="loadingProgress"
       ref="loadingModal"
     ></VBoardLoading>
-    <VLayer
+    <!-- <VLayer
       ref="layer"
       :zIndex="1"
       :visible="true"
@@ -45,7 +45,7 @@
       @sortIndex="sortIndex"
       @petaPanelMenu="petaPanelMenu"
       @update="orderPIXIRender"
-    />
+    /> -->
   </article>
 </template>
 
@@ -624,10 +624,17 @@ export default class VBoard extends Vue {
     } catch (error) {
       log("vBoard", "load error:", error);
     }
-    this.loading = false;
+    // this.loading = false;
+    // this.loadingProgress = 0;
+    // this.loadingLog = "";
+    this.cancel = undefined;
+    this.pixi.renderer.plugins.prepare.upload(this.pixi.stage, () => {
+      console.log(1111);
+      this.renderOrdered = true;
+      this.loading = false;
     this.loadingProgress = 0;
     this.loadingLog = "";
-    this.cancel = undefined;
+    });
   }
   async loadOriginal(petaPanel: PetaPanel) {
     if (this.pPanels[petaPanel.id]) {
@@ -681,7 +688,7 @@ export default class VBoard extends Vue {
     this.backgroundFilter.brightness(value, false);
   }
   orderPIXIRender() {
-    this.renderOrdered = true;
+    // this.renderOrdered = true;
   }
   renderPIXI() {
     if (this.renderOrdered) {
