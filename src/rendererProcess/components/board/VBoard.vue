@@ -654,7 +654,8 @@ export default class VBoard extends Vue {
     pPanel.load().then(() => {
       pPanel.update();
       console.log("loaded");
-      this.pixi.renderer.plugins.prepare.upload(pPanel, () => {
+      this.renderOrdered = true;
+      // this.pixi.renderer.plugins.prepare.upload(pPanel, () => {
         this.loadedCount++;
         console.log("uploaded");
         if (this.loadedCount == this.board?.petaPanels.length) {
@@ -664,7 +665,7 @@ export default class VBoard extends Vue {
           this.loadingProgress = 0;
           this.loadingLog = "";
         }
-      });
+      // });
     }).catch((err) => {
       this.loadedCount++;
       if (this.loadedCount == this.board?.petaPanels.length) {
@@ -675,9 +676,9 @@ export default class VBoard extends Vue {
         this.loadingLog = "";
       }
     });
-    await new Promise((res, rej) => {
-      setTimeout(res, 4);
-    })
+    // await new Promise((res, rej) => {
+    //   setTimeout(res, 0);
+    // })
     // this.orderPIXIRender();
     
     return pPanel;
