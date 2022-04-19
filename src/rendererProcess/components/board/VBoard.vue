@@ -595,6 +595,7 @@ export default class VBoard extends Vue {
     Cursor.setDefaultCursor();
   }
   async loadAllOriginal() {
+    this.loadedCount = 0;
     if (!this.board) {
       return;
     }
@@ -628,14 +629,15 @@ export default class VBoard extends Vue {
     // this.loadingProgress = 0;
     // this.loadingLog = "";
     this.cancel = undefined;
-    this.pixi.renderer.plugins.prepare.upload(this.pixi.stage, () => {
-      console.log(1111);
-      this.renderOrdered = true;
-      this.loading = false;
-    this.loadingProgress = 0;
-    this.loadingLog = "";
-    });
+    // this.pixi.renderer.plugins.prepare.upload(this.pixi.stage, () => {
+      // console.log("complete all");
+      // this.renderOrdered = true;
+      // this.loading = false;
+      // this.loadingProgress = 0;
+      // this.loadingLog = "";
+    // });
   }
+  loadedCount = 0;
   async loadOriginal(petaPanel: PetaPanel) {
     if (this.pPanels[petaPanel.id]) {
       return false;
@@ -649,9 +651,35 @@ export default class VBoard extends Vue {
     }
     this.pPanels[petaPanel.id] = pPanel;
     this.panelsCenterWrapper.addChild(pPanel);
-    await pPanel.load();
-    pPanel.update();
-    this.orderPIXIRender();
+    pPanel.load().then(() => {
+      pPanel.update();
+      console.log("loaded");
+      this.pixi.renderer.plugins.prepare.upload(pPanel, () => {
+        this.loadedCount++;
+        console.log("uploaded");
+        if (this.loadedCount == this.board?.petaPanels.length) {
+          console.log("complete all");
+          this.renderOrdered = true;
+          this.loading = false;
+          this.loadingProgress = 0;
+          this.loadingLog = "";
+        }
+      });
+    }).catch((err) => {
+      this.loadedCount++;
+      if (this.loadedCount == this.board?.petaPanels.length) {
+        console.log("complete all");
+        this.renderOrdered = true;
+        this.loading = false;
+        this.loadingProgress = 0;
+        this.loadingLog = "";
+      }
+    });
+    await new Promise((res, rej) => {
+      setTimeout(res, 4);
+    })
+    // this.orderPIXIRender();
+    
     return pPanel;
   }
   clearCache() {
@@ -688,7 +716,9 @@ export default class VBoard extends Vue {
     this.backgroundFilter.brightness(value, false);
   }
   orderPIXIRender() {
-    // this.renderOrdered = true;
+    if (!this.loading) {
+      this.renderOrdered = true;
+    }
   }
   renderPIXI() {
     if (this.renderOrdered) {
