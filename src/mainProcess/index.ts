@@ -48,6 +48,7 @@ import AppIcon from "@/@assets/icon.png";
   */
   //-------------------------------------------------------------------------------------------------//
   let window: BrowserWindow;
+  let window2: BrowserWindow;
   let DIR_ROOT: string;
   let DIR_APP: string;
   let DIR_LOG: string;
@@ -183,7 +184,7 @@ import AppIcon from "@/@assets/icon.png";
   app.on("activate", async () => {
     mainLogger.logChunk().log("#Electron event: activate");
     if (BrowserWindow.getAllWindows().length === 0) {
-      initWindow();
+      initWindow("main");
     }
   });
   //-------------------------------------------------------------------------------------------------//
@@ -283,7 +284,8 @@ import AppIcon from "@/@assets/icon.png";
     */
     //-------------------------------------------------------------------------------------------------//
     createProtocol("app");
-    initWindow();
+    initWindow("main");
+    initWindow2("browser");
     //-------------------------------------------------------------------------------------------------//
     /*
       IPCのメインプロセス側のAPI
@@ -783,8 +785,72 @@ import AppIcon from "@/@assets/icon.png";
   }
   function emitMainEvent<U extends keyof MainEvents>(key: U, ...args: Parameters<MainEvents[U]>): void {
     window.webContents.send(key, ...args);
+    window2.webContents.send(key, ...args);
   }
-  async function initWindow() {
+  async function initWindow2(args: string) {
+    window2 = new BrowserWindow({
+      width: dataStates.data.windowSize.width,
+      height: dataStates.data.windowSize.height,
+      minWidth: WINDOW_MIN_WIDTH,
+      minHeight: WINDOW_MIN_HEIGHT,
+      frame: false,
+      titleBarStyle: "hiddenInset",
+      show: true,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        preload: Path.join(__dirname, "preload.js")
+      },
+      trafficLightPosition: {
+        x: 13,
+        y: 13
+      }
+    });
+    if (process.env.WEBPACK_DEV_SERVER_URL) {
+      console.log(process.env.WEBPACK_DEV_SERVER_URL);
+      await window2.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + "?" + args)
+      if (!process.env.IS_TEST) {
+        window2.webContents.openDevTools({ mode: "detach" });
+      }
+    } else {
+      await window2.loadURL("app://./index.html" + "?" + args);
+    }
+    window2.setMenuBarVisibility(false);
+    // window.webContents.debugger.attach("1.1");
+    // console.log(window.webContents.debugger.isAttached(), window.webContents.debugger);
+    // window.webContents.debugger.on('detach', (event, reason) => {
+    //   console.log('Debugger detached due to : ', reason)
+    // })
+    // window.webContents.debugger.on("message", (event, method, params) => {
+    //   if (method == "Network.responseReceived") {
+    //     console.log(params.response);
+    //   }
+    //   console.log(method, params);
+    // })
+    // window.webContents.debugger.sendCommand('Network.enable');
+    if (dataStates.data.windowIsMaximized) {
+      window2.maximize();
+    }
+    window2.on("close", () => {
+      if (!window2.isMaximized()) {
+        dataStates.data.windowSize.width = window2.getSize()[0] || WINDOW_DEFAULT_WIDTH;
+        dataStates.data.windowSize.height = window2.getSize()[1] || WINDOW_DEFAULT_HEIGHT;
+      }
+      dataStates.data.windowIsMaximized = window2.isMaximized();
+      dataStates.save();
+      const log = mainLogger.logChunk();
+      log.log("#Save Window Size", dataStates.data.windowSize);
+    });
+    window2.addListener("blur", () => {
+      emitMainEvent("windowFocused", false);
+    });
+    window2.addListener("focus", () => {
+      emitMainEvent("windowFocused", true);
+    });
+    window2.setAlwaysOnTop(dataSettings.data.alwaysOnTop);
+    return window2;
+  }
+  async function initWindow(args: string) {
     window = new BrowserWindow({
       width: dataStates.data.windowSize.width,
       height: dataStates.data.windowSize.height,
@@ -804,12 +870,13 @@ import AppIcon from "@/@assets/icon.png";
       }
     });
     if (process.env.WEBPACK_DEV_SERVER_URL) {
-      await window.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
+      console.log(process.env.WEBPACK_DEV_SERVER_URL);
+      await window.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + "?" + args)
       if (!process.env.IS_TEST) {
         window.webContents.openDevTools({ mode: "detach" });
       }
     } else {
-      await window.loadURL("app://./index.html");
+      await window.loadURL("app://./index.html" + "?" + args);
     }
     window.setMenuBarVisibility(false);
     // window.webContents.debugger.attach("1.1");

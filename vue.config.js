@@ -1,12 +1,12 @@
 const packageJSON = require("./package.json");
 const files = {
-  main: {
+  renderer: {
     entry: "./src/rendererProcess/index.ts",
     template: "./src/rendererProcess/index.html"
   },
-  renderer: {
+  main: {
     preload: "./src/mainProcess/preload.ts",
-    main: "./src/mainProcess/index.ts"
+    entry: "./src/mainProcess/index.ts"
   },
   appxConfig: "./electron.config.appx.js"
 }
@@ -20,8 +20,8 @@ module.exports = {
   productionSourceMap: false,
   pluginOptions: {
     electronBuilder: {
-      preload: files.renderer.preload,
-      mainProcessFile: files.renderer.main,
+      preload: files.main.preload,
+      mainProcessFile: files.main.entry,
       chainWebpackMainProcess: (config) => {
         config.module
           .rule('images')
@@ -35,10 +35,10 @@ module.exports = {
           .clear();
         config
           .entry("app")
-          .add(files.main.entry);
+          .add(files.renderer.entry);
         config.plugin('html')
           .tap((args) => {
-            args[0].template = files.main.template
+            args[0].template = files.renderer.template
             return args;
           })
         config.module
