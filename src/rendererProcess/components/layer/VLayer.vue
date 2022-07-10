@@ -21,7 +21,9 @@
           :key="layerCellData.id"
           :ref="(element) => setVLayerCellRef(element, layerCellData.pPanel.petaPanel.id)"
           :pPanel="layerCellData.pPanel"
-          :draggingPPanel="draggingPPanel"
+          :style="{
+            visibility: draggingPPanel === layerCellData.pPanel ? 'hidden' : 'visible'
+          }"
           @startDrag="startDrag"
           @click.right="rightClick(layerCellData.pPanel, $event)"
           @click.left="leftClick(layerCellData.pPanel, $event)"
@@ -30,6 +32,9 @@
           ref="cellDrag"
           :pPanel="draggingPPanel"
           :drag="true"
+          :style="{
+            visibility: !draggingPPanel ? 'hidden' : 'visible'
+          }"
         />
       </ul>
     </t-layers>
